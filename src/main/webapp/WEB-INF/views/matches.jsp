@@ -39,7 +39,7 @@
                                 </li>
                             </ul>
                         </div>
-                    </div>
+                    </div> 
                 </div>
                 <div class="main__filter">
                     <div class="main__match-filter">
@@ -113,11 +113,14 @@
                                     <div class="match-status isFull" v-if="match.applicantCount == match.max_people">
 		                                <p>마감</p>
 		                            </div>
- 		                            <div class="match-status isHurry" v-else-if="match.applicantCount >= (match.max_people/2)">
+ 		                            <div class="match-status isHurry" v-else-if="(match.applicantCount >= (match.max_people/2))">
 		                                <p>마감임박!</p>
 		                            </div>
-		                            <div class="match-status isOpen" v-else-if="match.applicantCount <= (match.max_people/2)">
+		                            <div class="match-status isOpen" v-else-if="(match.applicantCount <= (match.max_people/2)) && isSelected[index] == 'false'">
 		                                <p>신청가능</p>
+		                            </div>
+		                            <div class="match-status isOpen" v-else-if="isSelected[index] == 'true'">
+		                                <p>신청완료</p>
 		                            </div>
                                 </div>
                             </a>
@@ -205,13 +208,13 @@
         	
         	var currentDate = '';
             var is_first = false;
-            currentDate = moment().format('YYYYMMD');
+            currentDate = moment().format('YYYYMMDD');
             if (!currentDate) {
                 if (getCookie('currentDate') != null) {
                     currentDate = getCookie('currentDate')
                     delete_cookie('currentDate')
                 } else {
-                    currentDate = moment().format('YYYYMMD')
+                    currentDate = moment().format('YYYYMMDD')
                 }
                 is_first = true;
          //        var filters = "?schedule="+currentDate+"&sex=1,0,-1&level=0,1,2&type=match,cup"
@@ -226,7 +229,7 @@
                     checkedParam: [],
                 	currentDate: '',  //현재 날짜
                 	checkedNames: [],
-                		
+               		
                 	// 성별
                 	checkedSex: [],
                 	selectSex: [],
@@ -239,6 +242,10 @@
                     matchDays: [],
                     currentMatches: [],
                     currentMatchesNum: [],
+                    
+                    // 내가 신청한 매치 목록 - 신청완료 신청가능을 분별하기 위해 새로 만듦
+                    selectMatchList: [],
+                    isSelected: [],
                     
                     isLoading: false,
                     isFullLoading: false,
@@ -261,7 +268,7 @@
                         var weeks = ['일', '월', '화', '수', '목', '금', '토']
                         var yoil = weeks[addDate.weekday()]
                         var is_current = false
-                        if (this.currentDate == addDate.format('YYYYMMD')) { is_current = true }
+                        if (this.currentDate == addDate.format('YYYYMMDD')) { is_current = true }
                         this.matchDays.push({
                             year: year,
                             month: month,
@@ -375,6 +382,8 @@
                     // 1번째로 실행됨 - 조건에 따른 매치 조회
                     fetchMatches(regionId, event) {
                     	
+                    	//this.fetchMyMatches()
+                    	
                     	// 첫 로드 때 지역 기본값은 서울로 지정... 그 다음부터는 클릭한 곳으로..
                     	console.log(regionId);
                     	var selectReg = "";
@@ -430,58 +439,62 @@
                         v.isLoading = true
                         v.now = 25
                         
-                        
-                        // parameter 보내려면 post방식을 get방식으로 달아서 보낼 수 없음
-                        // 필요한거 1.성별-레벨 /2.지역 /3.날짜
-						//var paramCate = ["Male","Female","Mix","Low","Middle","High"]
-                        var paramArea = "A"
-                        
-        				var paramArr1 = "&param=";
-        				var paramArea1 = "&area=";
-        				var paramDay1 = "&day=";
-        				// test - json 쿼리스트링 에러가 있는듯
-        				var paramArr2 = ['Male','Female','Mix','Low','Middle','High'];
-        				var paramArea2 = selectReg
-        				var paramDay2 = this.currentDate
-        				
-        				
-        				//var queryStr = paramArr1+selectCate+paramArea1+paramArea2+paramDay1+paramDay2;
-
-        				//console.log("queryStr : " + queryStr)
-        				
-        				
-        				axios.post('http://localhost:8081/footballMaster/matches',{
-	        						'match_date' : this.currentDate,
-	        						'gender_rule' : this.selectSex,
-	        						'level' : this.selectLevel,
-	        						'region' : this.selectRegion
-        				})
-        				.then(function(res) {
-        					console.log("---1---")
-        					console.log(res.data);
+        				axios.all([
+							axios.post('http://localhost:8081/footballMaster/matches',{
+        						'match_date' : this.currentDate,
+        						'gender_rule' : this.selectSex,
+        						'level' : this.selectLevel,
+        						'region' : this.selectRegion
+    						}),
+							axios.get('http://localhost:8081/footballMaster/my_matches')
+						])
+						.then(axios.spread((res1, res2) => {
+							// res1
+							console.log("---1---")
+        					console.log(res1.data);
                             v.isLoading = false
                             v.fetchMainBanner()
-                            v.currentMatches = res.data
+                            v.currentMatches = res1.data
                             
                             console.log("---2---")
                             console.log(v.currentMatches)
                             
+                            
                             var a = 0
                             for(i=0; i < v.currentMatches.length; i++){
-                            	console.log("["+i+"]");
-                            	console.log(v.currentMatches[i]);
-                            	console.log("[2 : " + v.currentMatches[i].match_date+"]");
                             	if(v.currentMatches[i].match_date < v.now){
                             		a++
                             		console.log("a++:"+a)
                             	}
                             }
                             v.currentMatchesNum = a
-                            v.runBounce = true
-						})
-						.catch(function() {
 							
+                            // res2
+                            console.log("--fetchMyMatches--")
+ 							this.selectMatchList = res2.data;
+                            console.log(v.selectMatchList)
+                            
+                            // 공간을 만들어서...
+                            // 판별할 방법이없어서 true false로 분별하도록.
+                            // 1. currentMatches를 selectMatchList와 비교해서. 맞으면 true 아니면 false
+                            for(i=0; i<v.currentMatches.length; i++){
+                            	this.isSelected[i] = 'false';
+                            	for(j=0; j<v.selectMatchList.length; j++){
+                            		if(v.currentMatches[i].id == v.selectMatchList[j].id){
+                            			this.isSelected[i] = 'true';
+                            			console.log(v.currentMatches[i].id + "==" + v.selectMatchList[j].id)
+                            		}
+                            	}
+                            }
+                            
+
+                            v.runBounce = true
+						
+						}))
+						.catch(function() {
+							console.log("---유저조회 실패---")
 						})
+
  
                     },
                     //-- 카테고리 필터 적용 이벤트.
@@ -600,7 +613,21 @@
                     	document.cookie = "currentDate="+this.currentDate
                     	var url = "/footballMaster/matches/";
                     	document.location.href = url+matchId
-                    }
+                    },
+                    fetchMyMatches: function() {
+                    	 axios.get('http://localhost:8081/footballMaster/my_matches')
+ 						.then(function(res) {
+ 							console.log("--fetchMyMatches--")
+ 							console.log(res.data);
+ 							this.selectMatchList = res.data
+
+ 							console.log(this.selectMatchList)
+ 							console.log("match_date, id, gender_rule, level, status")
+ 						})
+ 						.catch(function() {
+ 							
+ 						})
+					}
 
                 },
                 watch: {

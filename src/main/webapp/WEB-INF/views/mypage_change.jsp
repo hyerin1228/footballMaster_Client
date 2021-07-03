@@ -2,7 +2,7 @@
     <%@include file='includes/header.jsp' %>
     
         <script src="https://cdn.jsdelivr.net/npm/vue@2.6.8/dist/vue.js"></script>
-    <style>
+<style>
             /* 설정 */
         .content{
             margin: 0 auto;
@@ -130,11 +130,11 @@ select {
 
 </style>
     
-    <div class="content">
+    <div class="content" id="content">
     <div class="contentWapper_acc">
         <div class="inner">
             <div class="headmMessage">
-                <h2 name="email">이메일</h2>
+                <h2 name="email">[[ userData.email ]]</h2>
             </div>
             <form method="POST" action="file:///C:/mypage/change/profile" onsubmit="return checkSex()">
               <input type="hidden" name="csrfmiddlewaretoken" value="9tokaY1isfHdv">
@@ -142,25 +142,78 @@ select {
                   <div class="inputDWrap">
 <!--                   <div class="inputDWrap50"> -->
                       <label>이름</label>
-                        <input type="text" name="name" value="천경태" placeholder="이름" class="inputFULL" required="" id="id_name">
+                        <input type="text" name="name" v-bind:value="[[ userData.name]]" placeholder="이름" class="inputFULL" required="" id="id_name">
                   <div class="inputDWrap50">
                       <label>성별</label>
-                        <select name="sex" class="inputFull" id="sex">
+                        <select name="sex" class="inputFull" id="sex" v-model="userData.gender"> 
                             <option value="0">성별선택</option>
-                            <option value="1" selected="">남성</option>
-                            <option value="-1">여성</option>
+                            <option value="남성">남성</option>
+                            <option value="여성">여성</option>
                         </select>
-                    </div>      
+                  </div>      
+                  <div class="inputDWrap50">
+                      <label>생년월일</label>
+                      <input type="text" name="year" v-bind:value="[[birthY]]">년
+				      <select name="month" v-model="birthM">
+				        <option value="">-- 선택 --</option>
+				        <option value="1">1</option>
+				        <option value="2">2</option>
+				        <option value="3">3</option>
+				        <option value="4">4</option>
+				        <option value="5">5</option>
+				        <option value="6">6</option>
+				        <option value="7">7</option>
+				        <option value="8">8</option>
+				        <option value="9">9</option>
+				        <option value="10">10</option>
+				        <option value="11">11</option>
+				        <option value="12">12</option>
+				      </select>월
+				      <select name="day" v-model="birthD">
+				        <option value="">-- 선택 --</option>
+				        <option value="1">1</option>
+				        <option value="2">2</option>
+				        <option value="3">3</option>
+				        <option value="4">4</option>
+				        <option value="5">5</option>
+				        <option value="6">6</option>
+				        <option value="7">7</option>
+				        <option value="8">8</option>
+				        <option value="9">9</option>
+				        <option value="10">10</option>
+				        <option value="11">11</option>
+				        <option value="12">12</option>
+				        <option value="13">13</option>
+				        <option value="14">14</option>
+				        <option value="15">15</option>
+				        <option value="16">16</option>
+				        <option value="17">17</option>
+				        <option value="18">18</option>
+				        <option value="19">19</option>
+				        <option value="20">20</option>
+				        <option value="21">21</option>
+				        <option value="22">22</option>
+				        <option value="23">23</option>
+				        <option value="24">24</option>
+				        <option value="25">25</option>
+				        <option value="26">26</option>
+				        <option value="27">27</option>
+				        <option value="28">28</option>
+				        <option value="29">29</option>
+				        <option value="30">30</option>
+				        <option value="31">31</option>
+				      </select>일
+                  </div>      
                 </div>
                   <div class="inputwrap">
                     <label>휴대폰 번호</label>
-                        <input type="text" name="phone" value="010-5325-2619" placeholder="휴대폰 번호" required="" id="id_phone">
+                        <input type="text" name="phone" v-bind:value="[[ userData.phone_number]]" placeholder="휴대폰 번호" required="" id="id_phone">
                   
                   <p>"매치 참여시 본인 확인 및 참여 안내록을 보내드립니다."<br>
                   "이름과 휴대폰 번호를 꼭 바르게 적어주세요!"</p>
                   <div class="inputwrap">
                       <label>환불 계좌 은행</label>
-                        <select name="bank_cd" id="id_bank_cd">
+                        <select name="bank_cd" id="id_bank_cd" v-model="userBank.banks_id">
                             <option value="">---------</option>
 							  <option value="1">국민</option>
 							  <option value="2">기업</option>
@@ -192,12 +245,11 @@ select {
                     </div>
                   <div class="inputwrap">
                       <label>환불 계좌 번호</label>
-                      <input type="text" name="bank_no" maxlength="45" id="id_bank_no" style="
-    padding-right: 267px;
-">
+                      <input type="text" name="bank_no" v-bind:value="[[userBank.account_number]]" maxlength="45" id="id_bank_no" style="
+    padding-right: 267px;">
                   <div class="inputwrap">
                       <label>환불 계좌 예금주</label>
-                      <input type="text" name="bank_owner" maxlength="35" id="id_bank_owner">
+                      <input type="text" name="bank_owner" maxlength="35" id="id_bank_owner" v-bind:value="[[userBank.account_holder]]">
                   </div>
               </div></div></div></fieldset>
                   <div class="btnwrap">
@@ -211,47 +263,61 @@ select {
 
 
 <script type="text/javascript">
-		
-		var result = "";
-
-    	// 이름 / 성별 / 휴대폰번호 / 환불계좌은행 / 환불계좌번호 / 환불계좌예금주
-    	var userEmail = document.getElementsByName("email")[0];
-    	var userName = document.getElementsByName("name")[0];
-		// 성별 - 1:남자 / 2:여자    	
-    	var userSex = document.getElementsByName("sex");
-    	var userPhone = document.getElementsByName("phone")[0];
-    	var userBank_cd = document.getElementsByName("bank_cd")[0];
-    	var userBank_no = document.getElementsByName("bank_no")[0];
-    	var userBank_owner = document.getElementsByName("bank_owner");
-		
-    	console.log(userName+","+userSex+","+userPhone+","+userBank_cd+","+userBank_no+","+userBank_owner);
-	
-    $.ajax({
-      crossOrigin: true,
-	  dataType: "json",
-      url: "http://localhost:8081/footballMaster/user",
-      data: {
-    	'email' : 'asdf@naver.com'
-      },
-      success: function(data) {
-    	// data = email에 해당하는 유저정보
-        result = data;
-        console.log(result);
-        console.log("유저이메일:" + result.email +", 유저이름:" + result.name +", 성별:" + result.gender + ", 휴대폰번호:" + result.phone_number);
-
-        userEmail.innerText = result.email;
-        userName.value = result.name;
-        userSex.value = result.gender;
-        userPhone.value = result.phone_number;
+var myPageApp = new Vue ({
+    delimiters: ["[[", "]]"],
+    el: "#content",
+    data: {
+        userData: [],			// 유저정보
+        userBank: [],			// 유저계좌정보
+        birthY: [],
+        birthM: [],
+        birthD: []
         
-		
-      
-      },
-      error:function(request, status, error){ console.log("실패");
-      }
-    });
-      
-    
+    },
+    created() {
+        this.fetchUser()
+        this.fetchUserBank()
+    },
+    methods: {
+        fetchUser() {
+            var v = this
+            var strEmail = 'asdf@naver.com'
+            
+            axios.get('http://localhost:8081/footballMaster/my?email='+strEmail, config)
+            .then(function(res) {
+                v.userData = res.data
+                console.log("v.userData")
+                console.log(v.userData)
+                
+                // 유저 생년월일 정보 잘라서 저장
+                var userBirthSplit = v.userData.birthday.split('-');
+                console.log("userBirthSplit = " + userBirthSplit)
+                v.birthY = userBirthSplit[0];
+                v.birthM = userBirthSplit[1];
+                v.birthD = userBirthSplit[2];
+                
+                console.log("v.birthY = " + v.birthY)
+                console.log("v.birthM = " + v.birthM)
+                console.log("v.birthD = " + v.birthD)
+                
+            })
+            .catch(function(err) {})
+        },
+        fetchUserBank() {
+            var v = this
+            var strEmail = 'asdf@naver.com'
+            
+            axios.get('http://localhost:8081/footballMaster/my_bank?email='+strEmail, config)
+            .then(function(res) {
+                v.userBank = res.data
+                console.log("v.userBank")
+                console.log(v.userBank)
+            })
+            .catch(function(err) {})
+        },
+        
+    }
+});    
 </script>
 
 <script>
@@ -279,39 +345,63 @@ $(document).ready(function () {
     	
     	var frm = new FormData();
     	
-    	// 이름 / 성별 / 휴대폰번호 / 환불계좌은행 / 환불계좌번호 / 환불계좌예금주
+    	// 이름 / 성별 / 휴대폰번호 / 생년월일 ------------ 환불계좌은행 / 환불계좌번호 / 환불계좌예금주
     	var frmName = document.getElementsByName("name")[0].value;
 		// 성별 - 1:남자 / 2:여자    	
     	var frmSex = document.getElementsByName("sex")[0].selectedIndex;
     	var frmPhone = document.getElementsByName("phone")[0].value;
-    	var frmBank_cd = document.getElementsByName("bank_cd")[0].value;
+		
+    	// 생년월일
+    	var frmYear = document.getElementsByName("year")[0].value;
+    	var frmMonth = document.getElementsByName("month")[0].selectedIndex;
+    	var frmDay = document.getElementsByName("day")[0].selectedIndex;
+    	
+    	
+    	var frmBank_cd = document.getElementsByName("bank_cd")[0].selectedIndex;
     	var frmBank_no = document.getElementsByName("bank_no")[0].value;
     	var frmBank_owner = document.getElementsByName("bank_owner")[0].value;
+		
+		
+    	
 		
     	// 폼데이터에 추가
     	frm.append("name", frmName);
     	frm.append("sex", frmSex);
     	frm.append("phone", frmPhone);
+    	frm.append("year", frmYear);
+    	frm.append("month", frmMonth);
+    	frm.append("day", frmDay);
+    	frm.append("phone", frmPhone);
+    	
+    	/*
     	frm.append("bank_cd", frmBank_cd);
     	frm.append("bank_no", frmBank_no);
     	frm.append("bank_owner", frmBank_owner);
-    	
+    	*/
     	
     	let data = {
     			"name" : frmName,
-    			"sex" : frmSex,
-    			"phone" : frmPhone,
+    			"gender" : frmSex,
+    			"phone_number" : frmPhone,
+    			"birthday" : frmYear+"-"+frmMonth+"-"+frmDay
+    			/*
     			"bank_cd" : frmBank_cd,
     			"bank_no" : frmBank_no,
     			"bank_owner" : frmBank_owner
-    		}
-    	axios.post("http://localhost:8080/footballMaster/mypageChangeTest", JSON.stringify(data), {
-    		headers: {
-    			"Content-Type": 'application/json',
-    		},
-    	})
+    			*/
+    		};
+    	
+    	var email = "asdf@naver.com";
+    	
+    	axios.put("http://localhost:8081/footballMaster/users",{
+			'name' : frmName,
+			'gender' : frmSex,
+			'phone_number' : frmPhone,
+			'birthday' : frmYear+"-"+frmMonth+"-"+frmDay
+		})
     	.then(function(res){
     		console.log(res);
+    		window.location.href = 'http://localhost:8080/footballMaster/mypage';
     	});
     	
 /*     	console.log(frmName)

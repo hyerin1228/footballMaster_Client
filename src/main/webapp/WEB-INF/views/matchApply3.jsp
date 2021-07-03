@@ -3,8 +3,8 @@
 	
 	 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.8/dist/vue.js"></script>
 		
-<div class="content" id="content">
-            <div class="contentWrapper">
+<div class="content">
+            <div class="contentWrapper" id="content">
                 <div class="userInfo">
                     <form id="form" class="orderForm" method="POST">
                         <input type="hidden" name="csrfmiddlewaretoken"
@@ -51,11 +51,11 @@
                                 <div class="payRowWrap">
                                     <div class="payRow">
                                         <span>이용 금액</span>
-                                        <p id="match_cash">[[ matchFee ]]원</p>
+                                        <p id="match_cash"></p>
                                     </div>
                                     <div class="payRow">
-                                        <span id="remain_cash">캐시 차감 (잔여: [[ remainCash ]] 원)</span>
-                                        <p id="sum_cash" class="addFee">[[ matchFee ]]원</p>
+                                        <span id="remain_cash">캐시 차감 (잔여: 원)</span>
+                                        <p id="sum_cash" class="addFee">0원</p>
                                     </div>
                                 </div>
                                 <div class="confirm">
@@ -133,33 +133,28 @@
                 </div>
             </div>
 
-            <div class="modal--container" id="modalWrap" v-if="modalShow == true">
+            <div class="modal--container" id="modalWrap" style="display: none;">
                 <div class="modal--mask" id="modalMask">
                 </div>
                 <div class="modal--wrapper">
                     <div class="modal--header">
-                        <p class="modal--title"></p>
-                        <p class="modal--close" id="modalClose" @click="modalHide()">취소</p>
+                        <p class="modal--title">쿠폰을 선택하세요</p>
+                        <p class="modal--close" id="modalClose">취소</p>
                     </div>
                     <div class="modal--body">
                         <ul class="couponList">
-							<li>아래 신청 내용이 맞나요?</li>
-							<li>시간: [[ currentMatches.match_date ]]</li>
-							<li>장소: [[ currentMatches.name ]]</li>
-							<li>참가비: [[ matchFee ]]원</li>
+
                         </ul>
                     </div>
                     <div class="modal--bottom">
                         <div class="modal--button">
-                            <span class="btn full lg" id="closeModal" style="cursor:pointer" @click="matchApply()">적용하기</span>
+                            <span class="btn full lg" id="closeModal" style="cursor:pointer">적용하기</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- var infoConfirm = confirm('아래 신청 내용이 맞나요?\n\n시간: ' + match_time + '\n장소: ' + match_stadium + '\n참가비: ' + match_cash);  -->
-        
+	
 		<script>	
 		$(document).ready(function () {
 			
@@ -169,9 +164,14 @@
 			var matchId = paramStr.split('/').reverse()[1]; // '/'로 나누어진 마지막 문자 얻어오기
 			console.log("param["+matchId+"]");
 			
+			// 현재 매치 date 와 stadium 이름 얻어오기
+//			const matchDate = document.getElementById('matchDate').innerText;
+//			const matchStadium = document.getElementById('matchStadium').innerText;
+			
+			
+			
+			
 			// 값 설정
-
-			/*
 			cal_cash()
             function cal_cash() {
 
@@ -189,9 +189,49 @@
                 }
                 $("#remain_cash").text(remain_cash_text)
             }
-			*/
+			
+			
+            modalSubmitBtn = document.getElementById("btnApply");
+
+         // 신청버튼 클릭 이벤트
+            modalSubmitBtn.onclick = () => {
+            	
+            	// 체크박스 미선택시 예외처리
+            	if ($("#confirmTP").is(':checked') == false) {
+                    alert("환불규정 및 주의사항에 동의해주세요")
+                    return
+                }
+                if ($("#confirmCorona").is(':checked') == false) {
+                    alert("코로나19 확진자 동선 방문 및 접촉 사실 여부에 동의해주세요")
+                    return
+                }
+                
+            	console.log("pressedApplyButton!!!");
+            	// 신청
+            	
+                $("#btnApply").prop("disabled", true);
+                var match_id = 57876
+
+                var match_time = '2021년 6월 18일 금요일 10:00'
+                var match_stadium = '서초 스타 풋살장 A면'
+                var match_cash =  '10,000원'
+                
+                console.log(match_cash);
+
+                var infoConfirm = confirm('아래 신청 내용이 맞나요?\n\n시간: ' + match_time + '\n장소: ' + match_stadium + '\n참가비: ' + match_cash); 
+
+                
+            };
+
+			
+			// 신청버튼 클릭 이벤트
+/* 			function pressedApplyButton() {
+				console.log("pressedApplyButton!!!");
+				
+			}; */
 			
 		});
+		
 		
 		</script>
 		
@@ -210,121 +250,120 @@
             	// 매치 이용 금액 participation_fee / 유저 보유 금액balance / remain_cash = 이용금액 - 
             	matchFee: '',
             	userBalance: '',
-            	remainCash: '',
-            	
-            	//모달on/off
-            	modalShow: false
+            	remainCash: ''
             	
             	
             },
             
 			created(){
             	// 처음 로딩.
-				this.getFetchUserInfoTest()
+            	//this.fetchMatch()
+            	//this.fetchUserInfo()
+            	this.sumCash()
 			},
 			mounted(){
-				// this.fetchUserInfo()
+				this.fetchUserInfo()
 			},
 			
 			methods:{
-				
-				//모달설정
-				modalHide(){
-					this.modalShow = false;
-				},
-				modalShow(){
-					this.modalShow = true;
-				},
-				
-				getFetchUserInfoTest(){
+				fetchMatch() {
+					const v = this
+					v.isFullLoading = false
+					
+					// 현재 매치 id 얻어오기
 					var paramStr = window.location.href
 					console.log("param["+paramStr+"]");
 					var matchId = paramStr.split('/').reverse()[1]; // '/'로 나누어진 마지막 문자 얻어오기
 					console.log("param["+matchId+"]");
 					
+					// 1. 현재 매치 정보
+					// 2. 현재 유저 정보
+					await axios.get('http://localhost:8081/footballMaster/matches/'+matchId)
+										.then(function(res) {
+											console.log("---1. 매치조회---")
+											console.log(res.data);
+								            v.currentMatches = res.data
+								            
+								            console.log("---2. 매치조회---")
+								            console.log(v.currentMatches)
+								            
+								            v.matchFee = v.currentMatches.participation_fee
+								            console.log("---3. 매치금액---")
+								            console.log(v.matchFee)
+								            
+								            
+								            
+										})
+										.catch(function() {
+											
+										});
+
+				},
+				
+				fetchUserInfoTest(){
+					this.currentUser = 
+				},
+				
+				fetchUserInfo(){
+					// 유저 정보
+					const v = this;
 					var uEmail = "asdf@naver.com"
 					console.log("uEmail="+uEmail)
-						
 					
-					console.log("1")
-					axios.all([
-						axios.get('http://localhost:8081/footballMaster/matches/'+matchId),
-						axios.get('http://localhost:8081/footballMaster/my?email='+uEmail)
-					])
-					.then(axios.spread((res1, res2) => {
-							this.currentMatches = res1.data
-							this.currentUser = res2.data
-							
-							// 유저 보유 금액 - 매치금액 = 잔여금액 
-			            	// userBalance: '' - matchFee: '', = remainCash: ''
-			            	this.userBalance = this.currentUser.balance
-			            	this.matchFee = this.currentMatches.participation_fee
-			            	this.remainCash = this.userBalance - this.matchFee
-			            	
-							console.log("매치 금액 = " + this.currentMatches.participation_fee)
-							console.log("유저 보유 금액= " + this.currentUser.balance)
-							console.log("잔여금액= " + this.currentMatches.participation_fee)
+					axios.get('http://localhost:8081/footballMaster/my?email='+uEmail)
+					.then(function(res) {
+						console.log("---1.유저조회---")
+						console.log(res.data);
+			            v.currentUser = res.data
+			            
+			            console.log("---2.유저조회---")
+			            console.log(v.currentUser)
+			            
+			            console.log("--보유금액1---"+v.currentUser.balance)
+			            v.userBalance = v.currentUser.balance
+			            console.log("--보유금액2---"+v.userBalance)
+			            
+			            // 유저 보유 금액과 게임 금액 뺀 걸 remainCash에 넣기
+			            v.remainCash = v.userBalance - v.matchFee
+			            console.log("--잔여금액---"+v.remainCash)
+			            
+			            
 
-							console.log("2매치 금액 = " + this.userBalance)
-							console.log("2유저 보유 금액= " + this.matchFee)
-							console.log("2잔여금액= " + this.remainCash)
-					}))
+			            
+					})
+					
 					.catch(function() {
 						console.log("---유저조회 실패---")
 					})
+				},
+				
+				// 신청하기 버튼 이벤트
+				pressedApplyButton(){
+					console.log("pressedApplyButton 신청하기 버튼 클릭 이벤트!")
+					
+					
 					
 				},
 				
-				// ?모달오픈
-				pressedApplyButton(){
-					console.log("vue 메서드 pressedApplyButton 신청하기 버튼 클릭 이벤트!")
-					// 모달실행
-					this.modalShow = true;
-					
-					
+				sumCash(){
+		            // 금액 표시
+	            	this.remainCash = this.userBalance - this.matchFee
+	            	console.log("차감후금액 : " + this.remainCash)
 				},
-				matchApply(){
-					// 유저 이메일 얻어오기
-					var uEmail = this.currentUser.email
-					var matchNumber =  this.currentMatches.id
-					console.log("uEmail =" + uEmail)
-					console.log("matchNumber =" + matchNumber)
-					//console.log("match_id =" this.currentMatches.match_id)
-					
-					// api 호출 매치 예약 -> /reservation/{match_id} hedaer에 유저 email / path에 매치넘버
-					axios.post('http://localhost:8081/footballMaster/reservation/'+matchNumber,{},{
-								headers: { 'email': uEmail }
-        				})
-        				.then(function(res) {
-        					window.location.href = 'http://localhost:8080/footballMaster/mypage';
-                            
-						})
-						.catch(function() {
-							
-						})
-					
-				}
+				
+				
 				
 			},
 			computed:{
 				
 			},
 			watch:{
-				remainCash: function(newVal){
-					this.remainCash = newVal
-					console.log("값변경감지! this.remainCash")
-					console.log(this.remainCash)
-					
-				}
 				
 			}
 			
 		});
 		
 		</script>
-		
-		
-		
 		
         <!-- footer -->
         <%@include file='includes/footer.jsp' %>
